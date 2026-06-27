@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;0,900;1,800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #121315;
+  --foreground: #E8EAEF;
+}
+
+@theme {
+  --color-mustard: #F2B822;
+  --color-mustard-hover: #DDA31A;
+  --color-charcoal: #1E1F22;
+  --color-charcoal-medium: #2D2F33;
+  --color-charcoal-light: #3D4045;
+  --color-content-bg: #E8EAEF;
+  --color-content-bg-dark: #121315;
+  
+  --font-heading: 'Montserrat', 'Inter', sans-serif;
+  --font-sans: 'Inter', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: #121315;
+  color: #E8EAEF;
+  overflow-x: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1E1F22; }
+::-webkit-scrollbar-thumb {
+  background: #F2B822;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #DDA31A;
+}
+
+.glass-card {
+  background: #1E1F22;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 1.5rem;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+}
