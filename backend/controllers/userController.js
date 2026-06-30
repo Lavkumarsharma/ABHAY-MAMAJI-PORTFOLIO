@@ -156,7 +156,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     user.resetPasswordExpire = undefined;
     await user.save();
     res.status(500);
-    throw new Error('Email could not be sent. Please check server logs for details.');
+    throw new Error(`Email failed: ${err.message || 'Unknown error'}`);
   }
 });
 
