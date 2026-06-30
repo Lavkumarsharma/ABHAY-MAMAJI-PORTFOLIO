@@ -20,6 +20,7 @@ export const sendEmail = async ({ to, subject, html }) => {
     host: 'smtp.gmail.com', // Forced host to prevent user typos
     port: 465,              // Forced port 465 for SSL
     secure: true,           // true for 465
+    family: 4,              // Force IPv4 (Fixes Node 18+ IPv6 timeout issues with Gmail)
     auth: {
       user: process.env.EMAIL_USER?.trim(),
       pass: process.env.EMAIL_PASS?.trim(),
