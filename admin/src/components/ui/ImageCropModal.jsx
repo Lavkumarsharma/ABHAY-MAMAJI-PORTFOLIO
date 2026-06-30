@@ -27,6 +27,9 @@ async function getCroppedBlob(image, crop, rotation = 0, scale = 1) {
   canvas.width = Math.floor(crop.width * scaleX * pixelRatio);
   canvas.height = Math.floor(crop.height * scaleY * pixelRatio);
 
+  // Clear canvas to fully transparent (no black fill)
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   ctx.scale(pixelRatio, pixelRatio);
   ctx.imageSmoothingQuality = 'high';
 
@@ -64,8 +67,9 @@ async function getCroppedBlob(image, crop, rotation = 0, scale = 1) {
 
   ctx.restore();
 
+  // Use PNG to preserve transparency
   return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.95);
+    canvas.toBlob((blob) => resolve(blob), 'image/png');
   });
 }
 
@@ -100,7 +104,7 @@ export default function ImageCropModal({ src, aspect, onConfirm, onClose }) {
     }
     if (!finalCrop || !imgRef.current) return;
     const blob = await getCroppedBlob(imgRef.current, finalCrop, rotation, scale);
-    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' });
+    const file = new File([blob], 'cropped.png', { type: 'image/png' });
     onConfirm(file);
   };
 
