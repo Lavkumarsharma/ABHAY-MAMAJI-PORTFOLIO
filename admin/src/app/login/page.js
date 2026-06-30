@@ -28,14 +28,7 @@ export default function LoginPage() {
   };
 
   const handleForgotPassword = () => {
-    // Generate mail and WhatsApp choices
-    const subject = encodeURIComponent("Portfolio Admin Password Reset Request");
-    const body = encodeURIComponent("Hi Abhay, I need to reset my portfolio admin panel password. Please assist me with the password reset process.");
-    const mailUrl = `mailto:abhayupadhyay807@gmail.com?subject=${subject}&body=${body}`;
-    const waUrl = `https://api.whatsapp.com/send?phone=+919006786961&text=${body}`;
-    
-    // Ask user or default to WhatsApp
-    window.open(waUrl, '_blank');
+    router.push('/forgot-password');
   };
 
   return (
