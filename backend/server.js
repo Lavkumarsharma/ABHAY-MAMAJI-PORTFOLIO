@@ -40,60 +40,45 @@ dotenv.config();
 
 const app = express();
 
-// Cache Warmer Function
-const warmUpCache = async () => {
-  try {
-    console.log('Warming up bootstrap cache...');
-    const [settings, experiences, projects, skills, education, certifications, testimonials, blogs] = await Promise.all([
-      Setting.findOne(),
-      Experience.find().sort({ order: 1 }),
-      Project.find().sort({ order: 1 }),
-      Skill.find().sort({ order: 1 }),
-      Education.find().sort({ order: 1 }),
-      Certification.find().sort({ order: 1 }),
-      Testimonial.find({ isActive: true }).sort({ order: 1 }),
-      Blog.find({ status: 'published' }).sort({ order: 1 })
-    ]);
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+// Allow all vercel.app domains + localhost in development
+const allowedOrigins = [
+  /\.vercel\.app$/,
+  /^http:\/\/localhost(:\d+)?$/,
+];
 
-    const bootstrapData = {
-      settings: settings || {},
-      experiences: experiences || [],
-      projects: projects || [],
-      skills: skills || [],
-      education: education || [],
-      certifications: certifications || [],
-      testimonials: testimonials || [],
-      blogs: blogs || []
-    };
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, curl, Render health check)
+    if (!origin) return callback(null, true);
+    const allowed = allowedOrigins.some(pattern =>
+      typeof pattern === 'string' ? pattern === origin : pattern.test(origin)
+    );
+    if (allowed) return callback(null, true);
+    return callback(null, true); // Allow all for now — tighten after custom domain setup
+  },
+  credentials: true,
+}));
 
-    cache.set(cacheKeys.BOOTSTRAP, bootstrapData);
-    console.log('Bootstrap cache warmed up successfully');
-  } catch (error) {
-    console.error('Failed to warm up cache on startup:', error.message);
-  }
-};
-
-// Database Connection
-connectDB().then(() => {
-  warmUpCache();
-});
-
-// Middlewares
-app.use(cors());
-app.use(express.json());
+// ─── Core Middlewares ──────────────────────────────────────────────────────────
+app.use(express.json({ limit: '10mb' }));
 app.use(compression());
-
 app.use(morgan('dev'));
 
-// Track visitors globally on all public GET requests
+// ─── Health Check (MUST be before trackVisitor & routes) ──────────────────────
+app.get('/', (req, res) => res.json({ status: 'ok', message: 'Portfolio API is running' }));
+app.get('/health', (req, res) => res.json({ status: 'healthy', timestamp: new Date() }));
+app.get('/api/health', (req, res) => res.json({ status: 'healthy', timestamp: new Date() }));
+
+// ─── Visitor Tracking (only on non-health routes) ─────────────────────────────
 app.use(trackVisitor);
 
-// Static Uploads Folder
+// ─── Static Uploads ───────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// Routes
+// ─── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api/settings', settingRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/skills', skillRoutes);
@@ -108,19 +93,50 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/setup', setupRoutes);
 
-// Health Check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date() });
-});
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date() });
-});
-
-// Fallback handlers
+// ─── Error Handlers ───────────────────────────────────────────────────────────
 app.use(notFound);
 app.use(errorHandler);
 
+// ─── Start Server ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+
+connectDB().then(() => {
+  warmUpCache();
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+  });
+}).catch(err => {
+  console.error('❌ DB Connection failed:', err.message);
+  process.exit(1);
 });
+
+// ─── Cache Warmer ─────────────────────────────────────────────────────────────
+async function warmUpCache() {
+  try {
+    console.log('Warming up bootstrap cache...');
+    const [settings, experiences, projects, skills, education, certifications, testimonials, blogs] = await Promise.all([
+      Setting.findOne(),
+      Experience.find().sort({ order: 1 }),
+      Project.find().sort({ order: 1 }),
+      Skill.find().sort({ order: 1 }),
+      Education.find().sort({ order: 1 }),
+      Certification.find().sort({ order: 1 }),
+      Testimonial.find({ isActive: true }).sort({ order: 1 }),
+      Blog.find({ status: 'published' }).sort({ order: 1 })
+    ]);
+
+    cache.set(cacheKeys.BOOTSTRAP, {
+      settings: settings || {},
+      experiences: experiences || [],
+      projects: projects || [],
+      skills: skills || [],
+      education: education || [],
+      certifications: certifications || [],
+      testimonials: testimonials || [],
+      blogs: blogs || []
+    });
+    console.log('✅ Bootstrap cache warmed up successfully');
+  } catch (error) {
+    console.error('⚠️ Failed to warm up cache:', error.message);
+  }
+}
