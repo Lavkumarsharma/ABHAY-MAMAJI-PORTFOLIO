@@ -17,10 +17,7 @@ export const sendEmail = async ({ to, subject, html }) => {
   }
 
   const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com', // Forced host to prevent user typos
-    port: 587,              // Forced port 587 for TLS
-    secure: false,          // false for 587
-    family: 4,              // Force IPv4 (Fixes Node 18+ IPv6 timeout issues with Gmail)
+    service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER?.trim(),
       pass: process.env.EMAIL_PASS?.trim(),
