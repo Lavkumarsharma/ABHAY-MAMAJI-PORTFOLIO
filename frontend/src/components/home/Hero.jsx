@@ -174,10 +174,11 @@ export default function Hero() {
             <img
               src={profileImg}
               alt={settings.fullName || 'Abhay Kumar Upadhyay'}
-              className="w-full object-cover"
+              className="w-full object-cover bg-transparent"
+              style={{ background: 'none' }}
             />
             {/* Smokey bottom fade — blends image into section background */}
-            <div className="absolute bottom-0 left-0 right-0 h-2/5 bg-gradient-to-t from-white dark:from-charcoal via-white/60 dark:via-charcoal/60 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-2/5 bg-gradient-to-t from-charcoal via-charcoal/60 to-transparent pointer-events-none" />
           </motion.div>
         </div>
 
