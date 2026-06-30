@@ -1,69 +1,38 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { uploadToCloudinary, isCloudinaryConfigured } from '../utils/cloudinary.js';
 import { protect, adminOnly } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-const storage = multer.memoryStorage();
+// Store file in memory buffer — no disk, no Cloudinary needed
 const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
 });
 
-const handleUpload = async (req, res, folder) => {
+/**
+ * Convert uploaded file buffer → Base64 data URL
+ * Stored directly in MongoDB as a string — works everywhere, no external service needed
+ */
+const handleUpload = (req, res) => {
   if (!req.file) {
-    res.status(400);
-    throw new Error('No file uploaded');
+    return res.status(400).json({ message: 'No file uploaded' });
   }
 
-  const fileName = `${Date.now()}_${req.file.originalname.replace(/\s+/g, '_')}`;
+  const mimeType = req.file.mimetype;
+  const base64 = req.file.buffer.toString('base64');
+  const dataUrl = `data:${mimeType};base64,${base64}`;
 
-  // Try Cloudinary
-  if (isCloudinaryConfigured) {
-    try {
-      const result = await uploadToCloudinary(req.file.buffer, folder, req.file.originalname);
-      return res.status(200).json({
-        url: result.secure_url,
-        public_id: result.public_id,
-        source: 'cloudinary'
-      });
-    } catch (error) {
-      console.error('Cloudinary upload failed, using local disk fallback:', error.message);
-    }
-  }
-
-  // Fallback to local public disk storage
-  try {
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const filePath = path.join(uploadDir, fileName);
-    fs.writeFileSync(filePath, req.file.buffer);
-
-    const hostUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    const localUrl = `${hostUrl}/uploads/${fileName}`;
-
-    return res.status(200).json({
-      url: localUrl,
-      source: 'local'
-    });
-  } catch (error) {
-    res.status(500);
-    throw new Error(`Upload failed: ${error.message}`);
-  }
+  return res.status(200).json({
+    url: dataUrl,
+    source: 'mongodb-base64',
+  });
 };
 
-router.post('/image', protect, adminOnly, upload.single('image'), (req, res, next) => {
-  handleUpload(req, res, 'images').catch(next);
-});
+// Image upload (profile photos, project covers, etc.)
+router.post('/image', protect, adminOnly, upload.single('image'), handleUpload);
 
-router.post('/resume', protect, adminOnly, upload.single('resume'), (req, res, next) => {
-  handleUpload(req, res, 'resumes').catch(next);
-});
+// Resume PDF upload
+router.post('/resume', protect, adminOnly, upload.single('resume'), handleUpload);
 
 export default router;
