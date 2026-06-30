@@ -112,6 +112,9 @@ app.use('/api/setup', setupRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date() });
 });
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date() });
+});
 
 // Fallback handlers
 app.use(notFound);
