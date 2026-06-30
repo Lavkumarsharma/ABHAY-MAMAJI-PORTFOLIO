@@ -151,11 +151,12 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     });
     res.json({ message: 'Reset link emailed successfully' });
   } catch (err) {
+    console.error('Failed to send email:', err);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
     res.status(500);
-    throw new Error('Email could not be sent');
+    throw new Error('Email could not be sent. Please check server logs for details.');
   }
 });
 
